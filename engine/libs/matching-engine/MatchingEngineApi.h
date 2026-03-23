@@ -10,8 +10,6 @@
 
 namespace scrimmage::match {
 
-static constexpr std::string_view CME = 
-
 // Router-level result: wraps OrderBook AddResult + identifies which book
 struct RouteResult {
     AddResult result;
@@ -80,17 +78,23 @@ public:
         for (auto& book : _books) book.reset();
     }
 
-    // =========================================================================
-    // CONFIGURATION — call before first order
-    // =========================================================================
-
-    // Register a symbol with its tick size. Returns the book index, or NO_BOOK if full.
-    // symbol must be 8 bytes, space-padded (same as NormalizedOrder.symbol).
-    // Returns uint8_t: fits symbol count in single byte (MaxSymbols ≤ 256)
-    //   - Fast array indexing: _books[bookIdx] uses uint8_t as direct table index
-    //   - Minimal per-symbol overhead in routeMap entries
+    // Note: This API is for tracking which symbols are valid on each exchange.
+    //       This is client-facing, but should likely be refactored to a a separate
+    //       SymbolRegistry class that the SymbolRouter references. That said, 
+    //       a symbol must be 8 bytes, space-padded (same as NormalizedOrder.symbol).
+    //       This is putting too much burden on the client; it's easily fixable and 
+    //       will be involved in the SymbolRegistry refactor. Until then, it is 
+    //       what it is.
+    // 
+    // Returns : uint8_t that fits symbol count in single byte (MaxSymbols ≤ 256).
+    //           Fast array indexing: _books[bookIdx] uses uint8_t as direct table index.
+    //           Minimal per-symbol overhead in routeMap entries.
     [[nodiscard]] uint8_t registerSymbol(const char symbol[8], uint32_t tickSize) noexcept {
-        if (_symbolCount >= MaxSymbols) return NO_BOOK;
+        if (_symbolCount >= MaxSymbols) 
+        {
+          // Likely a disaster. Decision needs to be discussed with business.
+          return NO_BOOK;
+        }
 
         uint64_t key = symbolToKey(symbol);
 
@@ -132,6 +136,7 @@ public:
             price, quantity, side, 
             timeInForce, 
             timestamp, onFill, userData);
+        return orderId;
     }
 
     // Add order: route by symbol
@@ -162,36 +167,44 @@ public:
         return {result, bookIdx};
     }
 
-    // Cancel order: route by orderId
     [[nodiscard]] bool cancelOrder(uint64_t orderId) noexcept {
         uint8_t bookIdx = routeFind(orderId);
-        if (bookIdx == NO_BOOK) return false;
+        if (bookIdx == NO_BOOK) 
+        {
+          // TODO: return in native exchange protocol.
+          return false;
+        }
 
         bool cancelled = _books[bookIdx].cancelOrder(orderId);
-        if (cancelled) routeErase(orderId);
+        if (cancelled)
+        {
+          routeErase(orderId);
+        }
         return cancelled;
     }
 
     // Modify order: route by orderId
-    [[nodiscard]] bool modifyOrder(uint64_t orderId, uint32_t newPrice, uint32_t newQty,
-                     uint64_t timestamp,
-                     FillCallback onFill, void* userData) noexcept {
+    [[nodiscard]] bool modifyOrder(uint64_t orderId, 
+      uint32_t newPrice, uint32_t newQty,
+      uint64_t timestamp,
+      FillCallback onFill, void* userData) noexcept {
         uint8_t bookIdx = routeFind(orderId);
-        if (bookIdx == NO_BOOK) return false;
+        if (bookIdx == NO_BOOK) {
+          // TODO: native exchange protocol.
+          return false;
+        }
 
         return _books[bookIdx].modifyOrder(
-            orderId, newPrice, newQty, timestamp, onFill, userData);
+            orderId, newPrice, newQty, 
+            timestamp, 
+            onFill, userData);
     }
 
-    // =========================================================================
-    // QUERIES
-    // =========================================================================
-
     [[nodiscard]] OrderBook<PoolSize, MapSize, MaxPriceLevels>&
-    book(uint8_t idx) noexcept { return _books[idx]; }
+    book(uint8_t bookIndex) noexcept { return _books[bookIndex]; }
 
     [[nodiscard]] const OrderBook<PoolSize, MapSize, MaxPriceLevels>&
-    book(uint8_t idx) const noexcept { return _books[idx]; }
+    book(uint8_t bookIndex) const noexcept { return _books[bookIndex]; }
 
     [[nodiscard]] uint8_t findBook(const char symbol[8]) const noexcept {
         uint64_t key = symbolToKey(symbol);
@@ -303,7 +316,8 @@ private:
     static bool shouldMove(size_t empty, size_t current, size_t ideal) noexcept {
         if (current >= ideal) {
             return (empty < current) && (empty >= ideal);
-        } else {
+        } 
+        else {
             return (empty >= ideal) || (empty < current);
         }
     }
