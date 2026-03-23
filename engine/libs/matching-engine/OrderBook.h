@@ -1,14 +1,17 @@
 //////////////////////////////////////////////////////////////////////////////
 // Project:   Scrimmage
+//
 // Library:   matching-engine
+//
 // Purpose:   This is an order book for a single product on any exchange.
 //            At this point the native exchange packet has already been
-//            decoded and normalized into the order book's internal format.
+//            decoded and provided to us as bid/ask/qty/side...
 //            A few notes:
-//            (1) This class, by itself, is not to be intended to be used by
-//                itself. Only in conjuntion with the SymbolRouter class.
-//                That is why APIs operate on orderIds, and not products.
+//            (1) This class, is NOT intended to be used by itself.
+//                The SymbolRouter class has an instance of every symbol's order book.
+//                The Client-facing API routes the order to the appropriate symbol's order book.
 //            (2) Each instance of OrderBook maintains a pool
+//
 // The OrderBook's client-facing API. It maintains an intrusive 
 //            list of Orders, meaning that the array holds Orders, and is
 //
@@ -29,6 +32,7 @@
 
 namespace scrimmage::match {
 
+// Note: In the next iteration use native binary protocols.
 using FillCallback = void(*)(const MatchResult& fill, void* userData);
 
 template<
@@ -52,6 +56,15 @@ public:
         _tickSize = tickSize;
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    // addOrder
+    //
+    // Notes  : (1) All TimeInForce values are honored: IOC/FOK/GFD...
+    //              Specify a price of 0 for Maret Orders.
+    //          (2) All partial fill behavior is honored.
+    //          (3) The orderId is decided by the symbo
+    // Returns: An enum indicating a possibility of outcomes. 
+    ////////////////////////////////////////////////////////////////////////
     AddResult addOrder(uint64_t orderId,
         uint32_t price, uint32_t quantity, char side,
         TimeInForce timeInForce, ExchangeProtocol exchangeProtocl,
@@ -75,6 +88,8 @@ public:
 
         // See how much quantity we can fill immediately.
         uint32_t remainingQty = quantity;
+
+        // A lot of complexity behind the scenes here.
         bool matched = tryMatch(orderId, 
           price, remainingQty, side, 
           protocol, onFill, userData);
@@ -85,27 +100,30 @@ public:
             return OrderAddResult.Filled;
         }
 
+        // A couple of notes:
+        // (1) We could have been partiall filled, not not at all.
+        // (2) Regardless, both Market and IOC orders are no longer valid.
+
         // Immediate or Cancel: fill as much as possible, cancel the remainder.
         if (timeInForce == TimeInForce.ImmediateOrCancel) {
-            // If it were fully filled, we would have returned already.
-            // If we were partiallly fliled, the remainder is cancelled.
+            // If the order was partiallly fliled, the remainder is cancelled.
             // If we were not filled at all, the order is rejected.          
-            return matched ? OrderAddResult.Cancelled : OrderAddResult.Rejected;
+            return matched ? OrderAddResult.Partial : OrderAddResult.Rejected;
         }
 
         // Market orders do not rest on the book.
         if (price == MARKET_ORDER_PRICE) {
-            // If it were fully filled, we would have returned already.
-            // If we were partiallly fliled, the remainder is cancelled.
+            // If the order was partiallly fliled, the remainder is cancelled.
             // If we were not filled at all, the order is rejected.
             return matched ? OrderAddResult.Cancelled : OrderAddResult.Rejected;
         }
 
-        // At this point, since the order can't be filled immediately, we need to add it to the book.
+        // Note: This order could be partially or completely unmatched.
+        //       Regardless, since it's an add, it receives a new order id. 
         uint16_t poolIndex = _pool.allocate();
 
         if (poolIndex == NONE) [[unlikely]] {
-          // BOTTOM LINE: The pool is full, and simply rejects the order.
+          // POTENTIAL DISASTER: The pool is full, and simply rejects the order.
           // We have several options here, each require business decisions: 
           // (1) Expand the pool, which seems *interently* dengerous. 
           //     User configuration/available system memory, etc.
@@ -117,8 +135,16 @@ public:
           return OrderAddResult.Rejected;;
         }
 
-        // The SymbolRouter has sent us the details to create a new order.
-        // This order will be reseting at back of the correct price level queue.
+        // A couple of points re: housekeeping:
+        // (1) This order will be resting at front of a new price level.
+        // (2) The current order was partially filled, so we have to clean up this price level.
+
+        // A couple of things to remember:
+        // (1) The OrderBookEntry is itself a note in an "intrusive" doubly-linked list.
+        //     (a) The _pool has an index to the order.
+        //     (b) The OrderBookEntry has a back-reference to the pool, which allows O(1) cancel/modify.
+        //     (c) Each OrderBookEntry has the array index of both the previous and next entry at each level.
+
         OrderBookEntry& entry  = _pool[poolIndex];
         entry.orderId          = orderId;
         entry.price            = price;
@@ -127,48 +153,61 @@ public:
         entry.timeInForce      = timeInForce;
         entry.timestamp        = timestamp;
 
-
+        // Add our link to the new order. 
         if (!_map.insert(orderId, poolIndex, side)) [[unlikely]] {
             _pool.deallocate(poolIndex);
             return AddResult::REJECTED;
         }
 
+        // Add this order to the price level.
         auto& levels = (side == SIDE_BUY) ? _bids : _asks;
         uint16_t levelIndex = levels.priceToLevel(price);
         levels.appendToLevel(levelIndex, poolIndex, _pool);
+
+        // Update the BBO if this order improved the market.
         updateBestAfterAdd(side, levelIndex);
 
         return matched ? AddResult::PARTIAL : AddResult::ADDED;
     }
 
-    // A couple of notes here:
-    // (1) This is implemented as a cancel/replace.
-    // (2) You lose queue position.
-    // (3) You're not guaranteed to get the price/quantity you want.
-    // (4) This can ultimately just end up as a cancel, and potentially an unwanted fill.
+    ///////////////////////////////////////////////////////////////////////////
+    // modifyOrder
+    //
+    // Notes  : (1) This is implemented as a cancel/replace.
+    //          (2) You lose queue position.
+    //          (3) You're not guaranteed to get the price/quantity you want.
+    //
+    // Returns: True if the cancel succeeded, and the new order was added.
+    //          False otherwise.
+    ///////////////////////////////////////////////////////////////////////////
     [[nodiscard]]
     bool modifyOrder(uint64_t orderId, uint32_t newPrice, uint32_t newQty,
                      uint64_t timestamp,
                      FillCallback onFill, void* userData) noexcept {
+
         MapValue mapValue = _map.find(orderId);
-        if (mapValue.poolIndex == NONE) return false;
+        if (mapValue.poolIndex == NONE) 
+        {
+          // This order was not found. We can't do anything.
+          return false;
+        }
 
         OrderBookEntry& entry = _pool[mapValue.poolIndex];
-        char side = mapValue.side;
+        char side       = mapValue.side;
         uint8_t protocol = entry.exchangeProtocol;
-        char tif = entry.timeInForce;
+        char timeInForce = entry.timeInForce;
 
-        // Confirm this order can be cancdelled before doing anything.
-        // A number of scenarios can cause an order to be uncancellable:
-        // E.g., in-flight terminal states, incorrect order ids, ...
         if (!cancelOrder(orderId)) 
+        {
+          // TODO: This warrants a special return value.
           return false;
+        }
 
-        // We lose queue position. Investigate which exchanges, if any, support in-place "Update".
+        // Allow quantity increases, until we use an exchange that supports modify-in-place.
         return addOrder(
           orderId,
           newPrice, newQty, side,
-          tif, protocol, timestamp,
+          timeInForce, protocol, timestamp,
           onFill, userData);
     }    
 
@@ -178,7 +217,7 @@ public:
         MapValue mapValue = _map.find(orderId);
         if (mapValue.poolIndex == OrderPoolPosition.End) 
           return false;
-         
+
         uint16_t poolIndex = mapValue.poolIndex;
         uint16_t levelIndex = _pool[poolIndex].levelIndex;
 
@@ -264,7 +303,6 @@ private:
 
             uint16_t besttLevel = oppLevels.bestLevel();
             if (besttLevel == PriceLevels < MaxLevels, PoolSize>::NO_LEVEL) {
-              // 
               break;
             }
 

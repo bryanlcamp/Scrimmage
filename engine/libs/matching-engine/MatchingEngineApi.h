@@ -1,12 +1,16 @@
 #pragma once
 
-#include "OrderBook.h"
 #include <array>
 #include <bit>
 #include <cstdint>
 #include <cstring>
+#include <string_view>
+
+#include "OrderBook.h"
 
 namespace scrimmage::match {
+
+static constexpr std::string_view CME = 
 
 // Router-level result: wraps OrderBook AddResult + identifies which book
 struct RouteResult {
@@ -102,9 +106,33 @@ public:
         return idx;
     }
 
-    // =========================================================================
-    // ORDER ROUTING — hot path
-    // =========================================================================
+    [[nodiscard]] AddResult addOrder(const char symbol[8],
+      uint32_t price, uint32_t quantity, char side, 
+      char timeInForce, uint64_t timestamp,
+      FillCallback onFill, void* userData) noexcept {
+        
+        // Find the book for this symbol.
+        uint8_t bookIndex = findBook(symbol);
+        if (bookIndex == NO_BOOK) [[unlikely]] {
+            // This symbol is not registered. Reject the order.
+            return {AddResult::REJECTED, NO_BOOK};
+        }
+
+        // TODO: (1) Provide an immediate ACK to the client?
+        //       (2) Wait to see if the ordrer was accepted/rejected?
+        //       (3) Wait to send an ACK until we know how much quantity was filled immediately?
+
+        // Proceed to add the order to the appropriate book.
+        // When we're adding an order via the symbol router, we don't have an orderId yet.
+        // Gemerate an order id now, so the order book can pass it via callbacks.
+        // We need to return a more rich result from addOrder, including the orderId.
+        uint64_t orderId = generateOrderId();
+        _books[bookIndex].addOrder(
+            orderId, 
+            price, quantity, side, 
+            timeInForce, 
+            timestamp, onFill, userData);
+    }
 
     // Add order: route by symbol
     [[nodiscard]] RouteResult addOrder(const char symbol[8],
