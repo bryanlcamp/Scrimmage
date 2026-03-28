@@ -50,7 +50,7 @@ public:
         _count = 0;
     }
 
-    // Insert orderId → (poolIndex, side).
+    // Insert orderId -> (poolIndex, side).
     // Returns true on success, false if full (should not happen if sized > pool).
     // Why two returns: success vs. full is critical distinction:
     //   - full means the entire hash table is saturated

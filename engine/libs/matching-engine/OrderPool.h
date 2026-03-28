@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////////////
 // Project:   Scrimmage
 // Library:   matching-engine
-// Purpose:   
+// Purpose:   This class holds all instances of OrderBookEntries and can
+//            be accessed by indices of an OrderPool. 
 // Author:    Bryan Camp
 //////////////////////////////////////////////////////////////////////////
 
@@ -81,10 +82,8 @@ public:
 
 private:
 
-    // Some import notes:
     // We can access OrderBook entries without dereferencing a series of pointers.
-    // Dereferering a pointer is fast, but two operations instead of one.
-    // But imrportantly, this can help with branch prediction and keep data in the same cache line.
+    // This helps with branch prediction and keep data in the same cache line.
     alignas(64) std::array<OrderBookEntry, Capacity> _entries{};
 
     // Index of first free slot in the pool.

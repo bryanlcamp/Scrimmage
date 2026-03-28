@@ -126,7 +126,7 @@ public:
     // Best level tracking (highest bid or lowest ask)
     // Maintained by OrderBook after add/cancel operations
     [[nodiscard]] uint16_t bestLevel() const noexcept { return _bestLevel; }
-    void setBestLevel(uint16_t lvl) noexcept { _bestLevel = lvl; }
+    void setBestLevel(uint16_t bestLevel) noexcept { _bestLevel = bestLevel; }
 
     // Query: does this side have any resting orders?
     [[nodiscard]] bool hasOrders() const noexcept { return _levelCount > 0; }

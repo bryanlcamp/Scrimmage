@@ -79,8 +79,8 @@ public:
     }
 
     // Note: This API is for tracking which symbols are valid on each exchange.
-    //       This is client-facing, but should likely be refactored to a a separate
-    //       SymbolRegistry class that the SymbolRouter references. That said, 
+    //       This is client-facing, but should be refactored to a separate
+    //       SymbolRegistry class that the MatchingEngine references. That said, 
     //       a symbol must be 8 bytes, space-padded (same as NormalizedOrder.symbol).
     //       This is putting too much burden on the client; it's easily fixable and 
     //       will be involved in the SymbolRegistry refactor. Until then, it is 
@@ -96,11 +96,15 @@ public:
           return NO_BOOK;
         }
 
+        // 
         uint64_t key = symbolToKey(symbol);
 
-        // Check for duplicate
+        // Check for duplicates.
         for (uint8_t i = 0; i < _symbolCount; ++i) {
-            if (_symbolKeys[i] == key) return i;
+            if (_symbolKeys[i] == key) {
+              // Symbol already registered.
+              return i;
+            }
         }
 
         uint8_t idx = static_cast<uint8_t>(_symbolCount);

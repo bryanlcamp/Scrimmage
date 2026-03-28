@@ -24,9 +24,8 @@ enum class ExchangeProtocol : uint8_t {
     Pillar = 2,
     CME = 3
 };
-å
-static constexpr uint32_t MARKET_ORDER_PRICE = 0;  // Price sentinel for market orders
 
+static constexpr uint32_t MARKET_ORDER_PRICE = 0;  // Price sentinel for market orders
 static constexpr uint16_t POOL_NONE = 0;  // Sentinel for empty/unused pool slots (also used as end-of-list in chains)
 
 } // namespace neuwillow::matching

@@ -1,0 +1,9 @@
+1. A client should not need to set the tick size prior to using the
+   exchange. There are a small number (at least for now), of exchanges
+   that can easily be mapped via a config file.
+2. Rethink how symbols on an exchange are registered. A client should
+   not be setting this. Likely a config file.
+3. Re-introduce native exchange protocols. I have already done this
+   for tnother project.
+4. Re-inrtoduce proper TCP/UDP protocols. Again, I jave already done this,
+   I need to find this code and properly integrate it
