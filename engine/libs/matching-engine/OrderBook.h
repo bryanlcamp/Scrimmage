@@ -1,6 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
 // Project:   Scrimmage
-//
 // Library:   matching-engine
 //
 // Purpose:   This is an order book for a single product on any exchange.
