@@ -90,10 +90,10 @@ class StopToken {
   class ThreadBootstrap {
     public:
       // Capture user worker, stop flag, target CPU
-      ThreadBootstrap(PinnedThread&& asyncPinnedWorker,
+      ThreadBootstrap(Worker&& worker,
                       std::atomic<bool>& stopSignal,
                       int targetCpuCore) noexcept
-          : _userWorker(std::forward<PinnedThread>(asyncPinnedWorker)),
+          : _userWorker(std::forward<PinnedThread>(worker)),
             _stopSignal(stopSignal),
             _targetCpuCore(targetCpuCore)
       {}
@@ -138,7 +138,7 @@ class StopToken {
           THREAD_AFFINITY_POLICY_COUNT
         );
       #endif
-    } // pinThreadIfRequested
+    } // ThreadBootstrap
 
     ///////////////////////////////////////////////////////////////////////////
     // Stack Warmup
@@ -178,7 +178,7 @@ class StopToken {
 
     private:
       // User-provided function.
-      PinnedThread _worker;
+      Worker _worker;
       
       // Shared stop signal.
       std::atomic<bool>& _stopFlag;
