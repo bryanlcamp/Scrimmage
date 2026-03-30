@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-namespace match {
+namespace scrimmage::match {
 
 // Single order in the book
 struct alignas(32) OrderBookEntry {
@@ -20,4 +20,4 @@ struct alignas(32) OrderBookEntry {
 
 static_assert(sizeof(OrderBookEntry) == 32, "OrderBookEntry must be 32 bytes");
 
-} // namespace match
+} // namespace scrimmage::match

@@ -8,7 +8,7 @@
 #include <chrono>
 #include "tcp_client.h"
 
-namespace beacon::networking {
+namespace scrimmage::networking {
 
 /**
  * @class TcpConnectionManager
@@ -77,4 +77,4 @@ private:
     std::atomic<bool> _running{false};
 };
 
-} // namespace beacon::networking
+} // namespace scrimmage::networking

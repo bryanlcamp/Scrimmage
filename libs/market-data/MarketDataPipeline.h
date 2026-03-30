@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <functional>
 
-namespace beacon::market {
+namespace scrimmage::market {
 
 /**
  * @class MarketDataPipeline
@@ -56,4 +56,4 @@ private:
     OrderCallback _callback;
 };
 
-} // namespace beacon::market
+} // namespace scrimmage::market

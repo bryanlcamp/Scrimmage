@@ -8,7 +8,7 @@
 #include <chrono>
 #include <functional>
 
-namespace beacon::market {
+namespace scrimmage::market {
 
 /**
  * @class SyntheticDataInjector
@@ -94,4 +94,4 @@ private:
     std::thread _thread;
 };
 
-} // namespace beacon::market
+} // namespace scrimmage::market

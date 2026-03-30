@@ -1,3 +1,13 @@
+//////////////////////////////////////////////////////////////////////////////
+// Project:   Scrimmage
+// Library:   market-data
+// Purpose:   Maintains full depth order book (bid/ask) for a single product.
+//            Notes: (1) Thread-safe for multi-threaded pipeline.
+//                   (2) Minimal locking in hot path.
+//                   (3) Hot-path updates via callbacks from UDP/TCP pipelines.
+// Author :   Bryan Camp
+//////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
 #include <vector>
@@ -10,28 +20,16 @@
 #include <optional>
 #include <cassert>
 
-namespace beacon::market {
+namespace scrimmage::market {
 
-/**
- * @struct Order
- * @brief Represents a single limit order at a price level.
- */
+// A Limit Order at a Proce Range
 struct Order {
-    uint64_t _id       = 0;    ///< Unique order ID
-    double   _price    = 0.0;  ///< Price
-    uint32_t _quantity = 0;    ///< Quantity
+    uint64_t id       = 0;
+    double   price    = 0.0;
+    uint32_t quantity = 0;
 };
 
-/**
- * @class OrderBookFeed
- * @brief Maintains full depth order book (bid/ask) for a single instrument.
- *
- * Design goals:
- * - Hot-path updates via callbacks from UDP/TCP pipelines
- * - Full depth book with fast lookup by order ID
- * - Thread-safe for multi-threaded pipelines
- * - Minimal locking in hot-path
- */
+
 class OrderBookFeed {
 public:
     using UpdateCallback = std::function<void()>;
@@ -65,7 +63,8 @@ public:
         if (it != book.end()) {
             // Update existing order
             *it = order;
-        } else {
+        } 
+        else {
             // Insert new order
             book.push_back(order);
         }
@@ -126,4 +125,4 @@ private:
     UpdateCallback _callback;   ///< Optional update notification
 };
 
-} // namespace beacon::market
+} // namespace scrimmage::market

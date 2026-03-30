@@ -3,7 +3,7 @@
 #include <cstdint>
 #include "OrderBookEntry.h"
 
-namespace match {
+namespace scrimmage::match {
 
 /**
  * @brief Price-level management for one side (bid or ask)
@@ -98,4 +98,4 @@ private:
     uint32_t _refPrice{0};
 };
 
-} // namespace match
+} // namespace scrimmage::match

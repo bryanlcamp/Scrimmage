@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstring>
 
-namespace beacon::networking {
+namespace scrimmage::networking {
 
 /**
  * @class TcpEncoder
@@ -30,4 +30,4 @@ public:
     }
 };
 
-} // namespace beacon::networking
+} // namespace scrimmage::networking

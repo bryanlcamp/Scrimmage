@@ -5,7 +5,7 @@
 #include <functional>
 #include <vector>
 
-namespace beacon::networking {
+namespace scrimmage::networking {
 
 /**
  * @class EncoderPipeline
@@ -40,4 +40,4 @@ private:
     SendCallback _callback;
 };
 
-} // namespace beacon::networking
+} // namespace scrimmage::networking

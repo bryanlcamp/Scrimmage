@@ -11,7 +11,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-namespace _::networking {
+namespace scrimmage::networking {
 
 /**
  * @class TcpServer
@@ -164,4 +164,4 @@ private:
     std::vector<std::thread> _client_threads; ///< Client handler threads
 };
 
-} // namespace _::networking
+} // namespace scrimmage::networking

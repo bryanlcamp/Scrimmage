@@ -7,7 +7,7 @@
 #include "PriceLevels.h"
 #include "MatchResult.h"
 
-namespace match {
+namespace scrimmage::match {
 
 template<size_t PoolSize = 4096,
          size_t MapSize = 8192,
@@ -71,4 +71,4 @@ private:
     bool _refPriceSet{false};
 };
 
-} // namespace match
+} // namespace scrimmage::match

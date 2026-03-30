@@ -5,7 +5,7 @@
 #include <vector>
 #include <stdexcept>
 
-namespace beacon::networking {
+namespace scrimmage::networking {
 
 /**
  * @class TcpFramer
@@ -52,4 +52,4 @@ private:
     size_t _maxFrameSize;
 };
 
-} // namespace beacon::networking
+} // namespace scrimmage::networking

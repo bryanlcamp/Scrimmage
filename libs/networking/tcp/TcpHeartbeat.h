@@ -5,7 +5,7 @@
 #include <chrono>
 #include <functional>
 
-namespace beacon::networking {
+namespace scrimmage::networking {
 
 /**
  * @class TcpHeartbeat
@@ -49,4 +49,4 @@ private:
     std::atomic<bool> _running{false};
 };
 
-} // namespace beacon::networking
+} // namespace scrimmage::networking

@@ -9,7 +9,7 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 
-namespace beacon::networking {
+namespace scrimmage::networking {
 
 /**
  * @class TcpClient
@@ -161,4 +161,4 @@ private:
     uint16_t _port;
 };
 
-} // namespace beacon::networking
+} // namespace scrimmage::networking

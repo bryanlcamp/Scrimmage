@@ -8,7 +8,7 @@
 #include <atomic>
 #include <vector>
 
-namespace beacon::networking {
+namespace scrimmage::networking {
 
 /**
  * @class TcpPipeline
@@ -66,4 +66,4 @@ private:
     std::thread _readThread;
 };
 
-} // namespace beacon::networking
+} // namespace scrimmage::networking

@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-namespace match {
+namespace scrimmage::match {
 
 // Result of a single fill
 struct alignas(32) MatchResult {
@@ -30,4 +30,4 @@ enum class AddResult : uint8_t {
 // Fill callback type
 using FillCallback = void(*)(const MatchResult& fill, void* userData);
 
-} // namespace match
+} // namespace scrimmage::match

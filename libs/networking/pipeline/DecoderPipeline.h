@@ -6,7 +6,7 @@
 #include <functional>
 #include <stdexcept>
 
-namespace beacon::networking {
+namespace scrimmage::networking {
 
 /**
  * @class DecoderPipeline
@@ -50,4 +50,4 @@ private:
     MessageCallback _callback;
 };
 
-} // namespace beacon::networking
+} // namespace scrimmage::networking

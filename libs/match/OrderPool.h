@@ -2,7 +2,7 @@
 #include <array>
 #include <cstdint>
 
-namespace match {
+namespace scrimmage::match {
 
 // Pre-allocated pool for orders
 template<size_t PoolSize>
@@ -49,4 +49,4 @@ private:
     size_t _activeCount{0};
 };
 
-} // namespace match
+} // namespace scrimmage::match

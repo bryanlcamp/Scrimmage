@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-namespace match {
+namespace scrimmage::match {
 
 // Sides
 constexpr char SIDE_BUY  = 'B';
@@ -18,4 +18,4 @@ constexpr char TIF_GTX = '5';
 // Market order price sentinel
 constexpr uint32_t MARKET_ORDER_PRICE = 0;
 
-} // namespace match
+} // namespace scrimmage::match

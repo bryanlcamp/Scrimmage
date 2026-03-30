@@ -2,7 +2,7 @@
 #include <array>
 #include <cstdint>
 
-namespace match {
+namespace scrimmage::match {
 
 /**
  * @brief O(1) orderId -> pool index + side lookup
@@ -45,4 +45,4 @@ private:
     std::array<MapValue<MapSize>, MapSize> _map{};
 };
 
-} // namespace match
+} // namespace scrimmage::match
