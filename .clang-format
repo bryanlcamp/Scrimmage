@@ -1,0 +1,31 @@
+BasedOnStyle: LLVM
+
+# Indentation
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+
+# Pointer/reference style
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Brace style
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterControlStatement: false
+  BeforeElse: true
+  BeforeCatch: true
+
+# Prevent one-liners
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
+
+# Spacing
+SpaceBeforeParens: ControlStatements
+
+# Line length
+ColumnLimit: 100
+
+# Includes
+SortIncludes: true

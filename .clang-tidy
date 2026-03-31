@@ -1,0 +1,51 @@
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  readability-*,
+  modernize-*,
+  clang-analyzer-*
+
+WarningsAsErrors: '*'
+
+CheckOptions:
+
+  # -------------------------
+  # Naming conventions
+  # -------------------------
+
+  # Variables: require descriptive names (at least 3 characters)
+  - key: readability-identifier-naming.VariableMinLength
+    value: 3
+
+  # Enforce lower_case for variables (optional but recommended)
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+
+  # Allow short loop variables (common and acceptable)
+  - key: readability-identifier-naming.AllowedNames
+    value: 'i,j,k,x,y,z'
+
+  # -------------------------
+  # General readability tweaks
+  # -------------------------
+
+  # Encourage const correctness
+  - key: readability-const-return-type.IgnoreMacros
+    value: 'true'
+
+  # -------------------------
+  # Performance (important for your project)
+  # -------------------------
+
+  # Warn on unnecessary copies
+  - key: performance-unnecessary-value-param.AllowedTypes
+    value: ''
+
+  # -------------------------
+  # Modern C++ usage
+  # -------------------------
+
+  # Prefer modern constructs (auto, nullptr, etc.)
+  - key: modernize-use-auto.MinTypeNameLength
+    value: 5

@@ -15,12 +15,6 @@ constexpr char TIF_IOC = '3';
 constexpr char TIF_FOK = '4';
 constexpr char TIF_GTX = '5';
 
-// Market order price sentinel
-#pragma once
-#include <cstdint>
-
-namespace scrimmage::matching {
-
 // Sentinel values
 inline constexpr uint32_t MARKET_ORDER_PRICE   = 0;
 inline constexpr int64_t  PRICE_EMPTY          = -1;       // Unset price
