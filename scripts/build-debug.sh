@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# FULL DEBUG BUILD PIPELINE - EVERYTHING ENABLED
+# FULL DEBUG BUILD PIPELINE - EVERYTHING ENABLED (OUTPUT TO SCREEN)
 # =============================================================================
 set -e
 set -o pipefail
@@ -35,11 +35,19 @@ cd "$BUILD_DIR"
 NUM_CORES=$(sysctl -n hw.ncpu)
 
 # --------------------------
+# Configure sanitizer flags
+# --------------------------
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    # macOS / Apple Silicon
+    SANITIZERS="-fsanitize=address,undefined"
+else
+    SANITIZERS="-fsanitize=address,undefined,leak,thread"
+fi
+
+# --------------------------
 # Configure CMake
 # --------------------------
 echo "Configuring CMake (Debug + Sanitizers + Warnings + GoogleTest)..."
-
-SANITIZERS="-fsanitize=address,undefined,leak,thread"
 CXX_FLAGS="-g -O0 -fno-omit-frame-pointer -fno-inline -fstack-protector-strong $SANITIZERS -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion -Wnull-dereference"
 
 cmake "$PROJECT_ROOT" \
@@ -57,9 +65,10 @@ cmake --build . -j"$NUM_CORES"
 # --------------------------
 # clang-format check
 # --------------------------
-echo "Running clang-format..."
-FORMAT_FILES=$(find "$PROJECT_ROOT/apps" "$PROJECT_ROOT/libs" \( -name "*.cpp" -o -name "*.h" \) -print0)
-if ! echo "$FORMAT_FILES" | xargs -0 clang-format --dry-run --Werror; then
+echo "Checking formatting..."
+FORMAT_FILES=$(find "$PROJECT_ROOT/apps" "$PROJECT_ROOT/libs" \( -name "*.cpp" -o -name "*.h" \))
+if ! clang-format --dry-run --Werror $FORMAT_FILES; then
+  echo "Formatting violations detected! Run clang-format -i to fix."
   FORMAT_STATUS="FAILED"
 else
   FORMAT_STATUS="PASSED"
@@ -70,34 +79,33 @@ fi
 # --------------------------
 echo "Running clang-tidy..."
 if command -v run-clang-tidy >/dev/null 2>&1; then
-  CLANG_TIDY_LOG="$BUILD_DIR/clang-tidy.log"
-  run-clang-tidy -p "$BUILD_DIR" -j "$NUM_CORES" | tee "$CLANG_TIDY_LOG"
-  CLANG_TIDY_STATUS="COMPLETED"
+  if ! run-clang-tidy -p "$BUILD_DIR" -j "$NUM_CORES"; then
+    CLANG_TIDY_STATUS="ISSUES FOUND"
+  else
+    CLANG_TIDY_STATUS="OK"
+  fi
 else
-  CLANG_TIDY_LOG="N/A"
-  CLANG_TIDY_STATUS="MISSING"
+  CLANG_TIDY_STATUS="MISSING (install clang-tools)"
 fi
 
 # --------------------------
-# Run unit tests (GoogleTest + GoogleMock)
+# Run unit tests
 # --------------------------
-echo "Running all unit tests..."
-TEST_LOG="$BUILD_DIR/unit-tests.log"
-if ctest --output-on-failure -j "$NUM_CORES" | tee "$TEST_LOG"; then
-  TEST_STATUS="PASSED"
-else
+echo "Running unit tests..."
+if ! ctest --output-on-failure -j "$NUM_CORES"; then
   TEST_STATUS="FAILED"
+else
+  TEST_STATUS="PASSED"
 fi
 
 # --------------------------
 # Run tests with sanitizers
 # --------------------------
 echo "Running tests with sanitizers..."
-SANITIZER_LOG="$BUILD_DIR/sanitizer-tests.log"
 ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
 UBSAN_OPTIONS=print_stacktrace=1 \
 TSAN_OPTIONS=halt_on_error=1 \
-ctest --output-on-failure -j "$NUM_CORES" | tee "$SANITIZER_LOG"
+ctest --output-on-failure -j "$NUM_CORES"
 SANITIZER_STATUS="COMPLETED"
 
 # --------------------------
@@ -108,8 +116,8 @@ echo "=============================="
 echo "DEBUG BUILD SUMMARY"
 echo "=============================="
 echo "Formatting check: $FORMAT_STATUS"
-echo "Clang-Tidy: $CLANG_TIDY_STATUS (log: $CLANG_TIDY_LOG)"
-echo "Unit tests: $TEST_STATUS (log: $TEST_LOG)"
-echo "Sanitizer tests: $SANITIZER_STATUS (log: $SANITIZER_LOG)"
+echo "Clang-Tidy: $CLANG_TIDY_STATUS"
+echo "Unit tests: $TEST_STATUS"
+echo "Sanitizer tests: $SANITIZER_STATUS"
 echo "=============================="
 echo "Debug pipeline complete."
