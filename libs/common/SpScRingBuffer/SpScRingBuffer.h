@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////
 // Project     : Scrimmage
 // Library     : common
-// Purpose     : Cache-line optimized single-producer single-consumer ring buffer
+// Purpose     : Cache-line optimized SPSC ring buffer.
 // Author      : Bryan Camp
 //////////////////////////////////////////////////////////////////////////////
 
@@ -76,7 +76,7 @@ public:
                 }
             }
 
-            scrimmage::core::concurrency::cpuPause();
+            cpuPause();
         }
     }
 

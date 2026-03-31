@@ -1,52 +1,52 @@
 #pragma once
+#include "OrderBookEntry.h"
 #include <array>
-#include <cstdint>
+#include <atomic>
+#include <cstddef>
 
-namespace scrimmage::match {
+namespace scrimmage::matching {
 
-// Pre-allocated pool for orders
-template<size_t PoolSize>
-class OrderPool {
+template <size_t MaxOrders = MAX_ORDERS_PER_BOOK>
+class OrderBookPool {
 public:
-    static constexpr uint16_t NONE = 0xFFFF;
-
-    OrderPool() { reset(); }
-
-    void reset() noexcept {
-        _freeHead = 0;
-        _activeCount = 0;
-        for (uint16_t i = 0; i < PoolSize; ++i) {
-            _entries[i]._nextIndex = i + 1;
+    OrderBookPool() noexcept {
+        for (size_t i = 0; i < MaxOrders - 1; i++) {
+            _entries[i].nextFreeIndex.store(i + 1, std::memory_order_relaxed);
         }
-        _entries[PoolSize - 1]._nextIndex = NONE;
+        _entries[MaxOrders - 1].nextFreeIndex.store(NO_FREE_INDEX, std::memory_order_relaxed);
+        _freeIndex.store(0, std::memory_order_relaxed);
     }
 
-    // Allocate a free slot
-    uint16_t allocate() noexcept {
-        if (_freeHead == NONE) return NONE;
-        uint16_t idx = _freeHead;
-        _freeHead = _entries[idx]._nextIndex;
-        _entries[idx]._nextIndex = NONE;
-        ++_activeCount;
-        return idx;
+    static constexpr size_t NO_FREE_INDEX = SIZE_MAX;
+
+    // Allocate an entry, return index or NO_FREE_INDEX
+    size_t allocate() noexcept {
+        size_t current = _freeIndex.load(std::memory_order_acquire);
+        if (current == NO_FREE_INDEX) {
+            return NO_FREE_INDEX;
+        }
+        size_t next = _entries[current].nextFreeIndex.load(std::memory_order_relaxed);
+        _freeIndex.store(next, std::memory_order_release);
+        return current;
     }
 
-    // Deallocate slot
-    void deallocate(uint16_t idx) noexcept {
-        _entries[idx]._nextIndex = _freeHead;
-        _freeHead = idx;
-        --_activeCount;
+    void free(size_t idx) noexcept {
+        _entries[idx].nextFreeIndex.store(_freeIndex.load(std::memory_order_relaxed), std::memory_order_relaxed);
+        _freeIndex.store(idx, std::memory_order_release);
+        _entries[idx].reset();
     }
 
-    [[nodiscard]] size_t activeCount() const noexcept { return _activeCount; }
+    OrderBookEntry& entry(size_t idx) noexcept {
+        return _entries[idx];
+    }
 
-    OrderBookEntry& operator[](size_t idx) noexcept { return _entries[idx]; }
-    const OrderBookEntry& operator[](size_t idx) const noexcept { return _entries[idx]; }
+    const OrderBookEntry& entry(size_t idx) const noexcept {
+        return _entries[idx];
+    }
 
 private:
-    std::array<OrderBookEntry, PoolSize> _entries{};
-    uint16_t _freeHead{NONE};
-    size_t _activeCount{0};
+    alignas(64) std::array<OrderBookEntry, MaxOrders> _entries;
+    std::atomic<size_t> _freeIndex;
 };
 
-} // namespace scrimmage::match
+} // namespace scrimmage::matching

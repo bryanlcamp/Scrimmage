@@ -1,23 +1,28 @@
 #pragma once
-#include <cstdint>
+#include "Constants.h"
+#include "Order.h"
+#include <atomic>
+#include <cstddef>
 
-namespace scrimmage::match {
+namespace scrimmage::matching {
 
-// Single order in the book
-struct alignas(32) OrderBookEntry {
-    uint64_t _orderId{0};
-    uint32_t _quantity{0};
-    uint32_t _price{0};
-    uint8_t  _exchangeProtocol{0};
-    char     _timeInForce{0};
-    uint64_t _timestamp{0};
-    uint16_t _levelIndex{0};     // Price level index
-    uint16_t _nextIndex{0xFFFF}; // FIFO next pointer
+struct alignas(64) OrderBookEntry {
+    Order order;              // Actual order
+    std::atomic<uint64_t> nextFreeIndex; // For pool management
 
-    // Optional: pad to 32 bytes (2 per cache line)
-    char _pad[4]{0};
+    OrderBookEntry() noexcept
+        : order()
+        , nextFreeIndex(0)
+    {}
+    
+    bool isEmpty() const noexcept {
+        return order.isEmpty();
+    }
+
+    void reset() noexcept {
+        order = Order();
+        nextFreeIndex.store(0, std::memory_order_relaxed);
+    }
 };
 
-static_assert(sizeof(OrderBookEntry) == 32, "OrderBookEntry must be 32 bytes");
-
-} // namespace scrimmage::match
+} // namespace scrimmage::matching

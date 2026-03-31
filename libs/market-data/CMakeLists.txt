@@ -1,20 +1,13 @@
 cmake_minimum_required(VERSION 3.20)
+project(market-data LANGUAGES CXX)
 
-add_library(market_data STATIC
-    MarketDataPipeline.cpp
-    OrderBookFeed.cpp
-    SyntheticDataInjector.cpp
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_library(market-data INTERFACE)
+
+# Include headers directly
+target_include_directories(market-data INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}  # MarketDataPipeline.h, OrderBookFeed.h, etc.
 )
-
-target_include_directories(market_data
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-target_link_libraries(market_data
-    PUBLIC
-        networking
-        common
-)
-
-target_compile_features(market_data PUBLIC cxx_std_20)

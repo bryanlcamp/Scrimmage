@@ -1,17 +1,15 @@
-# Minimum CMake version required
 cmake_minimum_required(VERSION 3.20)
+project(common LANGUAGES CXX)
 
-# Create a library target called "common"
-# Since you only have headers, you can make it INTERFACE
-# If you have .cpp files, change to add_library(common STATIC ...)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Header-only library
 add_library(common INTERFACE)
 
-# Include the current directory and any subdirectories where headers are
-target_include_directories(common
-    INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}               # For CpuPause.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/SpScRingBuffer  # For SpScRingBuffer headers
+# Include base folder and subfolders
+target_include_directories(common INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}                  # common/
+    ${CMAKE_CURRENT_SOURCE_DIR}/SpScRingBuffer  # common/SpScRingBuffer/
 )
-
-# Optionally, you can specify C++ standard (in case users forget)
-target_compile_features(common INTERFACE cxx_std_20)

@@ -1,0 +1,1 @@
+mkdir -p build && cd build && cmake .. && cmake --build . -j$(sysctl -n hw.ncpu)

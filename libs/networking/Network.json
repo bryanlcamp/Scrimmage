@@ -1,0 +1,37 @@
+{
+  "tcp_clients": [
+    {
+      "name": "OrderExecutionClient",
+      "host": "127.0.0.1",
+      "port": 5001
+    },
+    {
+      "name": "HeartbeatClient",
+      "host": "127.0.0.1",
+      "port": 5002
+    }
+  ],
+  "tcp_server": {
+    "host": "127.0.0.1",
+    "port": 6000,
+    "backlog": 5
+  },
+  "udp_multicast": [
+    {
+      "name": "MatchReportFeed",
+      "multicast_address": "239.0.0.1",
+      "port": 7000,
+      "ttl": 1
+    },
+    {
+      "name": "MarketDataFeed",
+      "multicast_address": "239.0.0.2",
+      "port": 7001,
+      "ttl": 1
+    }
+  ],
+  "heartbeat": {
+    "interval_ns": 1000000000,
+    "client_port": 5002
+  }
+}

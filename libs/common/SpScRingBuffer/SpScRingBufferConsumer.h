@@ -14,7 +14,7 @@
 #include "../concurrency/pinned_thread.h"
 #include "spsc_ringbuffer.h"
 
-namespace scrimmage::core::ringbuffer {
+namespace scrimmage::common {
 
 // Threaded consumer for SpScRingBuffer
 template <typename MessageType, typename Callback, size_t Capacity = DEFAULT_RING_BUFFER_CAPACITY>
